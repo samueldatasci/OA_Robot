@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 
 
-def forcecharts(positions, times, path1, force1, velocity1): #, mass1, h, beta):
+def forcecharts(positions, times, path1, force1, velocity1, stoptodrop): #, mass1, h, beta):
     """    Function to plot the trajectory of the robots and the forces applied to them.
     Args:
         positions (list): List of positions for the robots.
@@ -52,7 +52,7 @@ def forcecharts(positions, times, path1, force1, velocity1): #, mass1, h, beta):
     axs[1].legend()
     axs[1].grid()
 
-    plt.suptitle("Force Components and Magnitudes Over Time")
+    plt.suptitle(f"Trajectory and Force Magnitudes, h={h}, stop={stoptodrop}", fontsize=16)
 
   
     opt_F1 = force1.value
@@ -82,12 +82,11 @@ def forcecharts(positions, times, path1, force1, velocity1): #, mass1, h, beta):
     axs[2].grid()
 
 
-
     plt.show()
 
 
 
-def print_results(result, force1, mass1, h, beta):
+def print_results(result, force1, mass1, h, beta, stoptodrop):
     opt_F1 = force1.value
 
     print(f"**** Sampling interval h={h}, inertia beta = {beta}")
@@ -198,16 +197,14 @@ def optimize_robots(positions = [[0,0], [10,2], [7,7]],
         # Extract optimized positions
         #opt_R1 = path1.value
 
-        print_results(result, force1, mass1, h, beta)
-        forcecharts(positions, times, path1, force1, velocity1)
+        print_results(result, force1, mass1, h, beta, stoptodrop)
+        forcecharts(positions, times, path1, force1, velocity1, stoptodrop)
 
     else:
         print("Optimization problem is infeasible or unbounded.")
 
 
 
-for h in [0.01]:
+for h in [0.001, 0.01, 0.1]:
     optimize_robots(stoptodrop=False, h=h, positions=[[0,0], [3,3], [10,2],[9,8], [7,7]], times=[5, 20, 24, 30])
-    #optimize_robots(stoptodrop=False, h=h)
-# optimize_robots(stoptodrop=True)
-
+    #optimize_robots(stoptodrop=True, h=h, positions=[[0,0], [3,3], [10,2],[9,8], [7,7]], times=[5, 20, 24, 30])
