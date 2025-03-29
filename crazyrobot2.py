@@ -11,107 +11,62 @@ def forcecharts(positions, times, path1, force1, velocity1, stoptodrop): #, mass
         times (list): List of times for stopping and final positions.
         path1 (cvxpy.Variable): Optimized trajectory of Robot 1.
         force1 (cvxpy.Variable): Optimized forces applied to Robot 1.
-        velocity1 (cvxpy.Variable): Optimized velocity of Robot 1.
-        stoptodrop (bool): Flag indicating whether to drop the package at the stopping station.
     """
-    # Create a figure with three subplots
-    fig, axs = plt.subplots(2, 2, figsize=(16, 9), sharex=False)
-    plt.suptitle(f"Trajectory and Force Magnitudes, h={h}, stop={stoptodrop}", fontsize=16)
-
+    # Create a figure with two subplots
+    fig, axs = plt.subplots(3, 1, figsize=(8, 9), sharex=False)
 
 #region Plot 1 - positions
 #--------------------- Plot 1: Optimized trajectories of the Robots ----------------------------------------
-
-    axsnum = (0,0)
-
     opt_R1 = path1.value
 
-    # Plot the trajectory of Robot 1, using all positions calculated (all points calculated due to h, the sampling interval)
-    axs[axsnum].plot(opt_R1[:, 0], opt_R1[:, 1], 'b-', label="Trajectory R1 sec/sec", zorder=1)
 
-    # Plot using only the position at the full seconds
+    axs[0].plot(opt_R1[:, 0], opt_R1[:, 1], 'b-', label="Trajectory of Robot 1", zorder=1)
+
     step = int(1 / h)  # Number of steps per second
     selected_indices = np.arange(0, len(opt_R1), step)  # Get indices for whole seconds
-    axs[axsnum].plot(opt_R1[selected_indices, 0], opt_R1[selected_indices, 1], 'r*-', label="Trajectory R1, h/h", zorder=0)
 
-    # Plot the initial, final position, and all stopping stations in between
-    axs[axsnum].scatter([positions[0][0]], [positions[0][1]], c='green', marker='s', label="Initial Positions", zorder=3)
-    axs[axsnum].scatter([positions[-1][0]], [positions[-1][1]], c='red', marker='s', label="Final Positions", zorder=3)
-    if stoptodrop:
-        axs[axsnum].scatter([pos[0] for pos in positions[1:-1]], [pos[1] for pos in positions[1:-1]], c='yellow', marker='o', label="Stopping Stations", zorder=2)
-    else:
-        axs[axsnum].scatter([pos[0] for pos in positions[1:-1]], [pos[1] for pos in positions[1:-1]], c='yellow', marker='o', label="Passing Stations", zorder=2)
+    # Plot only those points
+    axs[0].plot(opt_R1[selected_indices, 0], opt_R1[selected_indices, 1], 'r*-', label="Trajectory of Robot 1", zorder=0)
 
-    # Chart decoration
-    axs[axsnum].set_xlabel("X Position")
-    axs[axsnum].set_ylabel("Y Position")
-    axs[axsnum].legend()
-    axs[axsnum].set_title = "Robot Trajectory, optimized for minimum force"
-    axs[axsnum].grid()
+
+    #axs[0].plot(opt_R1[:, 0], opt_R1[:, 1], 'bo-', label="Trajectory of Robot 1", zorder=1)
+    axs[0].scatter([positions[0][0]], [positions[0][1]], c='green', marker='s', label="Initial Positions", zorder=3)
+    axs[0].scatter([positions[-1][0]], [positions[-1][1]], c='red', marker='s', label="Final Positions", zorder=3)
+    axs[0].scatter([pos[0] for pos in positions[1:-1]], [pos[1] for pos in positions[1:-1]], c='yellow', marker='o', label="Stopping Stations", zorder=2)
+
+    axs[0].set_ylabel("Y Position")
+    axs[0].legend()
+    axs[0].set_title = "Robot Trajectory, optimized for minimum force"
+    axs[0].grid()
     #endregion
 
 #region Plot 2 - forces
 # --------------------- Plot 2: optimal forces deployed to the Robots --------------------------
-    axsnum = (0,1)
+
     # Time steps
     time_steps1 = np.arange(len(path1.value))
 
-    # Compute force magnitudes (norm of the force vector)
+    # Compute force magnitudes
     opt_F1 = force1.value
     F1_magnitude = np.linalg.norm(opt_F1, axis=1)
 
-    # Present the force magnitude over time, using the same time steps as the trajectory
-    axs[axsnum].plot(time_steps1*h, F1_magnitude, 'b-', label="Force Magnitude (Robot 1)", linewidth=2)
-    # Mark the time steps for the stopping stations (or passing stations, if stoptodrop is False)
+
+    axs[1].plot(time_steps1*h, F1_magnitude, 'b-', label="Force Magnitude (Robot 1)", linewidth=2)
+    axs[1].set_ylabel("Force Magnitude")
+    axs[1].set_title("Force Magnitudes Over Time")
     if len(positions) > 2:
         stopstation=1
         for tstop in times[:-1]:
-            if stoptodrop:
-                axs[axsnum].axvline(x=tstop*h, color='yellow', linestyle='--', label=f"Stopping Station #{stopstation}", zorder=2)
-            else:
-                axs[axsnum].axvline(x=tstop*h, color='yellow', linestyle='--', label=f"Passing Station #{stopstation}", zorder=2)
+            axs[1].axvline(x=tstop*h, color='yellow', linestyle='--', label=f"Stopping Station #{stopstation}", zorder=2)
             stopstation += 1
 
-    # Chart decoration
-    axs[axsnum].set_ylabel("Force Magnitude")
-    axs[axsnum].set_title("Force Magnitudes Over Time")
-    axs[axsnum].legend()
-    axs[axsnum].grid()
+    axs[1].legend()
+    axs[1].grid()
 
-    # Time steps
-    time_steps1 = np.arange(len(path1.value))
-	#endregion
+    plt.suptitle(f"Trajectory and Force Magnitudes, h={h}, stop={stoptodrop}", fontsize=16)
 
-
-
-#region Plot 2 - forces
-# --------------------- Plot 2: optimal forces deployed to the Robots --------------------------
-
-    axsnum = (1,1)
-    # Time steps
-    time_steps1 = np.arange(len(path1.value))
-
-    # Compute force magnitudes (norm of the force vector)
+  
     opt_F1 = force1.value
-    F1_magnitude = np.square(np.linalg.norm(opt_F1, axis=1))
-
-    # Present the force magnitude over time, using the same time steps as the trajectory
-    axs[axsnum].plot(time_steps1*h, F1_magnitude, 'b-', label="Force Magnitude (Robot 1)", linewidth=2)
-    # Mark the time steps for the stopping stations (or passing stations, if stoptodrop is False)
-    if len(positions) > 2:
-        stopstation=1
-        for tstop in times[:-1]:
-            if stoptodrop:
-                axs[axsnum].axvline(x=tstop*h, color='yellow', linestyle='--', label=f"Stopping Station #{stopstation}", zorder=2)
-            else:
-                axs[axsnum].axvline(x=tstop*h, color='yellow', linestyle='--', label=f"Passing Station #{stopstation}", zorder=2)
-            stopstation += 1
-
-    # Chart decoration
-    axs[axsnum].set_ylabel("Squared force magnitude")
-    axs[axsnum].set_title("Squared force magnitudes Over Time")
-    axs[axsnum].legend()
-    axs[axsnum].grid()
 
     # Time steps
     time_steps1 = np.arange(len(path1.value))
@@ -120,26 +75,23 @@ def forcecharts(positions, times, path1, force1, velocity1, stoptodrop): #, mass
 #region Plot 3 - velocity
 # --------------------- Plot 3: Velocity of the robot --------------------------
 
-    axsnum = (1,0)
     # Compute force magnitudes
-    #F1_magnitude = np.linalg.norm(opt_F1, axis=1)
+    F1_magnitude = np.linalg.norm(opt_F1, axis=1)
+
 
     opt_Vel1 = cp.norm(velocity1.value, axis=1).value
-    axs[axsnum].plot(time_steps1*h, opt_Vel1, 'g-', label="Velocity (Robot 1)", linewidth=2)
-    #axs[axsnum].set_xlabel("Time Step")
-    axs[axsnum].set_ylabel("Velocity")
-    axs[axsnum].set_title("Velocity Over Time")
+    axs[2].plot(time_steps1*h, opt_Vel1, 'g-', label="Velocity (Robot 1)", linewidth=2)
+    #axs[2].set_xlabel("Time Step")
+    axs[2].set_ylabel("Velocity")
+    axs[2].set_title("Velocity Over Time")
     if len(positions) > 2:
         stopstation=1
         for tstop in times[:-1]:
-            if stoptodrop:
-                axs[axsnum].axvline(x=tstop*h, color='yellow', linestyle='--', label=f"Stopping Station #{stopstation}", zorder=2)
-            else:
-                axs[axsnum].axvline(x=tstop*h, color='yellow', linestyle='--', label=f"Passing Station #{stopstation}", zorder=2)
+            axs[2].axvline(x=tstop*h, color='yellow', linestyle='--', label=f"Stopping Station #{stopstation}", zorder=2)
             stopstation += 1
 
-    axs[axsnum].legend()
-    axs[axsnum].grid()
+    axs[2].legend()
+    axs[2].grid()
 	#endregion
 
     plt.show()
@@ -266,8 +218,7 @@ def optimize_robots(positions = [[0,0], [10,2], [7,7]],
 #endregion function optimize_robots
 
 
-for h in [0.01, 0.1, 1]:
-    # optimize_robots(stoptodrop=False, h=h, positions=[[0,0], [7,7]], times=[8])
-    optimize_robots(stoptodrop=False, h=h, positions=[[0,0], [10,2], [7,7]], times=[14, 20])
-    # optimize_robots(stoptodrop=False, h=h, positions=[[0,0], [3,3], [10,2],[9,8], [7,7]], times=[5, 20, 24, 30])
-    # optimize_robots(stoptodrop=True, h=h, positions=[[0,0], [3,3], [10,2],[9,8], [7,7]], times=[5, 20, 24, 30])
+for h in [0.01]:
+    optimize_robots(stoptodrop=False, h=h, positions=[[0,0], [7,7]], times=[8])
+    optimize_robots(stoptodrop=False, h=h, positions=[[0,0], [3,3], [10,2],[9,8], [7,7]], times=[5, 20, 24, 30])
+    optimize_robots(stoptodrop=True, h=h, positions=[[0,0], [3,3], [10,2],[9,8], [7,7]], times=[5, 20, 24, 30])
